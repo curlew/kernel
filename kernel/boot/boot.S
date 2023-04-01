@@ -11,10 +11,18 @@ stack_top:
 .section .text
 .global _start
 .type _start, @function
+
+.extern init
+.type init, @function
+
 _start:
     /* https://www.gnu.org/software/grub/manual/multiboot2/multiboot.html#I386-machine-state */
     cli
     movl $stack_top, %esp
 
+    call init
+
+halt:
     hlt
+    jmp halt
 .size _start, . - _start
