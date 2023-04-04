@@ -15,10 +15,13 @@ DEPS := $(OBJS:.o=.d)
 
 all: $(BUILD_DIR)/kernel.iso
 
+qemu: $(BUILD_DIR)/kernel.iso
+	qemu-system-x86_64 -serial stdio $^
+
 clean:
 	-rm -r $(BUILD_DIR)
 
-.PHONY: all clean
+.PHONY: all qemu clean
 
 $(BUILD_DIR)/kernel.iso: $(BUILD_DIR)/kernel.bin $(SRC_DIR)/grub.cfg
 	mkdir -p $(BUILD_DIR)/iso/boot/grub
