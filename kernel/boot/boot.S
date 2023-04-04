@@ -2,6 +2,12 @@
 
 .set STACK_SIZE, 0x4000 /* 16 KiB */
 
+.set GDT_CS_INDEX, 1
+.set GDT_DS_INDEX, 2
+/* descriptor index is bits 3 through 15 */
+.set GDT_CS_SELECTOR, (GDT_CS_INDEX << 3)
+.set GDT_DS_SELECTOR, (GDT_DS_INDEX << 3)
+
 .section .stack, "aw", @nobits
 .align 16
 stack_bottom:
@@ -21,6 +27,18 @@ stack_top:
 .comm pg_pd, 4096
 /* page table - entries (PTEs) map 4 KiB pages */
 .comm pg_pt, 4096
+
+.section .data
+.align 8
+gdt:
+.quad 0
+.quad 0x00AF9A000000FFFF /* CS: present, read/execute, page granularity, 64-bit */
+.quad 0x00CF92000000FFFF /* DS: present, read/write, page granularity, big */
+gdt_end:
+
+gdt_ptr:
+.short gdt - gdt_end - 1 /* size */
+.quad gdt /* base address */
 
 .section .text
 .global _start
@@ -85,6 +103,39 @@ _start:
     /* load pml4t to page directory base register */
     movl $pg_pml4t, %ebx
     movl %ebx, %cr3
+
+    /* enable physical address extension */
+    movl %cr4, %ebx
+    orl $0b100000, %ebx /* bit 5: PAE */
+    movl %ebx, %cr4
+
+    /* enter long mode */
+    movl $0xC0000080, %ecx /* EFER model-specific register */
+    rdmsr /* read into EDX:EAX (high order half:low order half) */
+    orl $(1 << 8), %eax /* set LME (long mode enable) bit */
+    wrmsr /* write to msr */
+
+    /* enable paging */
+    movl %cr0, %ebx
+    orl $(1 << 31), %ebx /* PG bit */
+    movl %ebx, %cr0
+
+    /* load 64-bit global descriptor table */
+    mov $gdt_ptr, %ebx
+    lgdt (%ebx)
+    /* far jump into code segment to reload CS register */
+    jmp $GDT_CS_SELECTOR, $1f
+
+.code64
+1:
+    /* manually reload other segment registers */
+    movw $GDT_DS_SELECTOR, %ax
+    movw %ax, %ds
+    movw %ax, %ss
+    movw $0, %ax
+    movw %ax, %es
+    movw %ax, %fs
+    movw %ax, %gs
 
     call init
 
