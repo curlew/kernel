@@ -49,6 +49,8 @@ gdt_ptr:
 
 _start:
     /* https://www.gnu.org/software/grub/manual/multiboot2/multiboot.html#I386-machine-state */
+    /* ebx contains the multiboot2 info struct's address */
+
     cli
     movl $stack_top, %esp
 
@@ -101,13 +103,13 @@ _start:
     loop .set_pte
 
     /* load pml4t to page directory base register */
-    movl $pg_pml4t, %ebx
-    movl %ebx, %cr3
+    movl $pg_pml4t, %eax
+    movl %eax, %cr3
 
     /* enable physical address extension */
-    movl %cr4, %ebx
-    orl $0b100000, %ebx /* bit 5: PAE */
-    movl %ebx, %cr4
+    movl %cr4, %eax
+    orl $0b100000, %eax /* bit 5: PAE */
+    movl %eax, %cr4
 
     /* enter long mode */
     movl $0xC0000080, %ecx /* EFER model-specific register */
@@ -116,13 +118,13 @@ _start:
     wrmsr /* write to msr */
 
     /* enable paging */
-    movl %cr0, %ebx
-    orl $(1 << 31), %ebx /* PG bit */
-    movl %ebx, %cr0
+    movl %cr0, %eax
+    orl $(1 << 31), %eax /* PG bit */
+    movl %eax, %cr0
 
     /* load 64-bit global descriptor table */
-    mov $gdt_ptr, %ebx
-    lgdt (%ebx)
+    mov $gdt_ptr, %eax
+    lgdt (%eax)
     /* far jump into code segment to reload CS register */
     jmp $GDT_CS_SELECTOR, $1f
 
@@ -137,6 +139,7 @@ _start:
     movw %ax, %fs
     movw %ax, %gs
 
+    movq %rbx, %rdi /* multiboot2 info struct */
     call init
 
 halt:
