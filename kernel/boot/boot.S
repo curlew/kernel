@@ -139,7 +139,7 @@ _start:
     movw %ax, %fs
     movw %ax, %gs
 
-    movq %rbx, %rdi /* multiboot2 info struct */
+    movq %rbx, %rdi /* multiboot2 info struct pointer */
     call init
 
 halt:
