@@ -19,7 +19,7 @@ qemu: $(BUILD_DIR)/kernel.iso
 	qemu-system-x86_64 -serial stdio $^
 
 clean:
-	-rm -r $(BUILD_DIR)
+	-rm -rf $(BUILD_DIR)
 
 .PHONY: all qemu clean
 
