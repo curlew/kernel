@@ -13,6 +13,8 @@ SRCS := $(shell find $(SRC_DIR) -name "*.c" -or -name "*.S")
 OBJS := $(SRCS:%=build/%.o)
 DEPS := $(OBJS:.o=.d)
 
+export PATH := toolchain/toolchain/x86_64-elf/bin:$(PATH)
+
 all: $(BUILD_DIR)/kernel.iso
 
 qemu: $(BUILD_DIR)/kernel.iso
